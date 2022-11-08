@@ -1,0 +1,170 @@
+name: jellyfinmediaplayer # you probably want to 'snapcraft register <name>'
+base: core22 # the base snap is the execution environment for this snap
+version: '1.7.1'
+summary: Jellyfin Desktop Client based on Plex Media Player
+description: |
+  Desktop client using jellyfin-web with embedded MPV player. Media plays within the same window using the jellyfin-web interface unlike Jellyfin Desktop. Supports audio passthrough. Based on Plex Media Player.
+
+grade: stable
+confinement: strict
+
+apps:
+  jellyfinmediaplayer:
+    command: /usr/bin/jellyfinmediaplayer
+
+environment:
+  LD_LIBRARY_PATH: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/pulseaudio${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+  QT_QPA_PLATFORM: wayland
+
+parts:
+  jellyfinmediaplayer:
+    after: [mpv-build]
+    plugin: nil
+    source: .
+    override-build: |
+      ./download_webclient.sh
+      cd build
+      cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=/usr/ ..
+      make -j4
+      make install
+    build-packages:
+      - build-essential
+      - autoconf
+      - automake
+      - libtool
+      - libharfbuzz-dev
+      - libfreetype6-dev
+      - libfontconfig1-dev
+      - libx11-dev
+      - libxrandr-dev
+      - libvdpau-dev
+      - libva-dev
+      - mesa-common-dev
+      - libegl1-mesa-dev
+      - yasm
+      - libasound2-dev
+      - libpulse-dev
+      - libuchardet-dev
+      - zlib1g-dev
+      - libfribidi-dev
+      - git
+      - libgnutls28-dev
+      - libgl1-mesa-dev
+      - libsdl2-dev
+      - cmake
+      - wget
+      - python3
+      - g++
+      - qtwebengine5-dev
+      - qtquickcontrols2-5-dev
+      - libqt5x11extras5-dev
+      - libcec-dev
+      - qml-module-qtquick-controls
+      - qml-module-qtwebengine
+      - qml-module-qtwebchannel
+      - qtbase5-private-dev
+      - curl
+      - unzip
+    stage-packages:
+      - libmpv1
+      - libqt5webengine5
+      - libcec6
+      - qml-module-qtwebengine
+      - qml-module-qtwebchannel
+      - qml-module-qtquick-controls
+      - libqt5x11extras5
+      - libqt5xml5
+      - libqt5gui5
+      - libunwind8
+      - liblua5.1-0
+      - libxpresent1
+      - libpulse0
+    override-prime: |
+       cp $SNAPCRAFT_PART_BUILD/build/src/jellyfinmediaplayer $SNAPCRAFT_PRIME/usr/bin/
+       craftctl default
+  mpv-build:
+    source: https://github.com/mpv-player/mpv-build.git
+    plugin: nil
+    override-build: |
+      echo --enable-libmpv-shared > mpv_options
+      echo --disable-cplayer >> mpv_options
+      ./rebuild -j4
+      ./install
+      ldconfig
+    build-packages:
+      - autoconf
+      - automake
+      - gcc
+      - debhelper
+      - glslang-dev
+      - ladspa-sdk
+      - libasound2-dev
+      - libarchive-dev
+      - libbluray-dev
+      - libbs2b-dev
+      - libcaca-dev
+      - libcdio-paranoia-dev
+      - libdrm-dev
+      - libdav1d-dev
+      - libdvdnav-dev
+      - libegl1-mesa-dev
+      - libepoxy-dev
+      - libfontconfig-dev
+      - libfreetype6-dev
+      - libfribidi-dev
+      - libgl1-mesa-dev
+      - libgbm-dev
+      - libgme-dev
+      - libgnutls28-dev
+      - libgsm1-dev
+      - libharfbuzz-dev
+      - libjack-jackd2-dev
+      - libjpeg-dev
+      - libbrotli-dev
+      - liblcms2-dev
+      - liblircclient-dev
+      - liblua5.1-0-dev
+      - libmodplug-dev
+      - libmp3lame-dev
+      - libopenal-dev
+      - libopus-dev
+      - libopencore-amrnb-dev
+      - libopencore-amrwb-dev
+      - libpulse-dev
+      - librtmp-dev
+      - librubberband-dev
+      - libssh-dev
+      - libsoxr-dev
+      - libspeex-dev
+      - libtool
+      - libuchardet-dev
+      - libv4l-dev
+      - libva-dev
+      - libvdpau-dev
+      - libvorbis-dev
+      - libvo-amrwbenc-dev
+      - libunwind-dev
+      - libvpx-dev
+      - libvulkan-dev
+      - libwayland-dev
+      - libx264-dev
+      - libx11-dev
+      - libxext-dev
+      - libxinerama-dev
+      - libxkbcommon-dev
+      - libxpresent-dev
+      - libxrandr-dev
+      - libxss-dev
+      - libxv-dev
+      - libxvidcore-dev
+      - meson
+      - nasm
+      - ninja-build
+      - pkg-config
+      - python3
+      - python3-docutils
+      - x11proto-core-dev
+      - zlib1g-dev
+    override-prime: |
+      craftctl default
+      cp $SNAPCRAFT_PART_BUILD/mpv/build/libmpv.so.2 $SNAPCRAFT_PRIME/usr/lib/x86_64-linux-gnu/
