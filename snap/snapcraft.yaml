@@ -5,28 +5,29 @@ summary: Jellyfin Desktop Client based on Plex Media Player
 description: |
   Desktop client using jellyfin-web with embedded MPV player. Media plays within the same window using the jellyfin-web interface unlike Jellyfin Desktop. Supports audio passthrough. Based on Plex Media Player.
 
-grade: stable
-confinement: strict
+grade: devel
+confinement: devmode
 
 apps:
   jellyfinmediaplayer:
-    command: /usr/bin/jellyfinmediaplayer
+    command: $SNAP/usr/bin/jellyfinmediaplayer
 
 environment:
+  QT_PLUGIN_PATH: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/qt5/plugins:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET:$SNAP_DESKTOP_RUNTIME/usr/lib/$CRAFT_ARCH_TRIPLET/qt5/plugins:$SNAP_DESKTOP_RUNTIME/usr/lib/$CRAFT_ARCH_TRIPLET${QT_PLUGIN_PATH:+:$QT_PLUGIN_PATH}
+  QML2_IMPORT_PATH: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/qt5/qml:$SNAP/lib/$CRAFT_ARCH_TRIPLET:$SNAP_DESKTOP_RUNTIME/usr/lib/$CRAFT_ARCH_TRIPLET/qt5/qml:$SNAP_DESKTOP_RUNTIME/lib/$CRAFT_ARCH_TRIPLET${QML2_IMPORT_PATH:+:$QML2_IMPORT_PATH}
   LD_LIBRARY_PATH: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET/pulseaudio${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
-  QT_QPA_PLATFORM: wayland
 
 parts:
   jellyfinmediaplayer:
     after: [mpv-build]
-    plugin: nil
+    plugin: cmake
     source: .
-    override-build: |
-      ./download_webclient.sh
-      cd build
-      cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=/usr/ ..
-      make -j4
-      make install
+    override-pull: |
+      craftctl default
+      $SNAPCRAFT_PROJECT_DIR/download_webclient.sh $SNAPCRAFT_PART_SRC
+    cmake-parameters:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DCMAKE_INSTALL_PREFIX=/usr
     build-packages:
       - build-essential
       - autoconf
@@ -68,7 +69,6 @@ parts:
     stage-packages:
       - libmpv1
       - libqt5webengine5
-      - libcec6
       - qml-module-qtwebengine
       - qml-module-qtwebchannel
       - qml-module-qtquick-controls
@@ -79,9 +79,6 @@ parts:
       - liblua5.1-0
       - libxpresent1
       - libpulse0
-    override-prime: |
-       cp $SNAPCRAFT_PART_BUILD/build/src/jellyfinmediaplayer $SNAPCRAFT_PRIME/usr/bin/
-       craftctl default
   mpv-build:
     source: https://github.com/mpv-player/mpv-build.git
     plugin: nil
@@ -105,7 +102,6 @@ parts:
       - libcaca-dev
       - libcdio-paranoia-dev
       - libdrm-dev
-      - libdav1d-dev
       - libdvdnav-dev
       - libegl1-mesa-dev
       - libepoxy-dev
@@ -165,6 +161,3 @@ parts:
       - python3-docutils
       - x11proto-core-dev
       - zlib1g-dev
-    override-prime: |
-      craftctl default
-      cp $SNAPCRAFT_PART_BUILD/mpv/build/libmpv.so.2 $SNAPCRAFT_PRIME/usr/lib/x86_64-linux-gnu/
